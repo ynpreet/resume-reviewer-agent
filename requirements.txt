@@ -1,0 +1,5 @@
+# No dependencies. Everything is Python stdlib (demo.py, app.py, test_rules.py).
+# The web app's PDF/DOCX parsing uses CDN libraries loaded in the browser:
+#   - PDF.js 3.11.174  (cdnjs) — PDF text extraction
+#   - mammoth.js 1.6.0 (cdnjs) — DOCX text extraction
+# No pip install needed.
