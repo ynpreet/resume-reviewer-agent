@@ -1,0 +1,24 @@
+Alex Rivera
+Austin, TX
+
+SUMMARY
+Backend engineer with 4 years of experience building APIs and data
+pipelines. Shipped features used by 2M users.
+
+EXPERIENCE
+Backend Engineer — Brightline, Austin, TX
+Mar 2023 – Present
+• Built REST APIs in Python serving 2M monthly users.
+• Reduced p99 latency 40% by adding Redis caching.
+• Led migration of 30 cron jobs to Airflow, cutting failures 60%.
+
+Software Engineer — Datawise, Remote
+Jul 2021 – Feb 2023
+• Developed ETL scripts in SQL and Python for nightly loads.
+• Created dashboards tracking 15 KPIs for the product team.
+
+SKILLS
+Python, SQL, REST API, Docker, Git, Airflow, Redis
+
+EDUCATION
+B.S. Software Engineering — UT Austin, 2021

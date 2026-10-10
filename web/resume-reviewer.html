@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resume Reviewer AI — Data with Preet</title>
+  <meta name="description" content="Upload your resume (PDF/DOCX) and a job description. Get 33 hiring-manager rules + JD keyword-match feedback, free, in your browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/resume-reviewer.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+</head>
+<body>
+  <div class="rr-wrap">
+    <div class="rr-top">
+      <a class="rr-brand" href="https://datawithpreet.github.io/">
+        <span class="rr-brand-mark">DwP</span>
+        <span class="rr-brand-copy"><strong>DATA WITH PREET</strong><small>BY PREET MEHTA</small></span>
+      </a>
+      <a class="rr-home-link" href="https://datawithpreet.github.io/">← Back to site</a>
+    </div>
+
+    <p class="rr-kicker">AGENTIC AI DEMO · 09</p>
+    <h1 class="rr-title">Resume Reviewer <span class="serif">AI</span></h1>
+    <p class="rr-sub">
+      Upload your resume and the job description you're targeting. This agent checks your resume
+      against <strong>33 hiring-manager rules</strong> — 15 for the header, 18 for the body &amp;
+      formatting — plus a <strong>job-description keyword match</strong>, and tells you exactly
+      what to fix.
+    </p>
+    <div class="rr-privacy">
+      <span>🔒</span>
+      <span><strong>Private by design.</strong> Your resume is parsed entirely in this browser tab —
+      it is never uploaded anywhere. Only your name, LinkedIn URL, the time, and your score are
+      emailed to Preet so he knows the tool was used.</span>
+    </div>
+
+    <form id="rr-form" class="rr-card" novalidate>
+      <div class="rr-field">
+        <label for="rr-name">Full name <small>— required</small></label>
+        <input type="text" id="rr-name" name="name" placeholder="Priya Sharma" autocomplete="name">
+      </div>
+      <div class="rr-field">
+        <label for="rr-linkedin">LinkedIn profile URL <small>— required</small></label>
+        <input type="text" id="rr-linkedin" name="linkedin" placeholder="linkedin.com/in/yourname" autocomplete="url">
+        <p class="rr-hint">The clean form: linkedin.com/in/yourname</p>
+      </div>
+      <div class="rr-field">
+        <label for="rr-jd">Job description <small>— required</small></label>
+        <textarea id="rr-jd" name="jd" placeholder="Paste the full job description here — the agent extracts the skills it asks for and checks which ones your resume shows."></textarea>
+      </div>
+      <div class="rr-field">
+        <label>Resume file <small>— PDF or DOCX, required</small></label>
+        <label class="rr-drop" for="rr-file">
+          <span class="rr-drop-icon">📄</span>
+          <strong>Choose your resume</strong>
+          <p>PDF or Word (.docx) · parsed in your browser · nothing uploaded</p>
+        </label>
+        <input type="file" id="rr-file" name="resume" accept=".pdf,.docx">
+      </div>
+      <button type="submit" id="rr-submit" class="rr-btn">Review my resume →</button>
+      <div id="rr-status" hidden></div>
+    </form>
+
+    <div id="rr-results" class="rr-card" hidden>
+      <div class="rr-score-row">
+        <div class="rr-score-ring">
+          <svg width="150" height="150" viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="54" fill="none" stroke="#e3ddd0" stroke-width="12"/>
+            <circle id="rr-score-ring-fg" cx="75" cy="75" r="54" fill="none" stroke="#141414"
+                    stroke-width="12" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3"/>
+          </svg>
+          <div class="rr-score-center">
+            <span id="rr-score-num">0</span>
+            <span id="rr-grade">—</span>
+          </div>
+        </div>
+        <div class="rr-score-legend">
+          <h3>Your resume report</h3>
+          <p>Score is 70% rules + 30% job-description skill match. Fix the failed rules top-down, re-run, and watch the score move.</p>
+        </div>
+      </div>
+
+      <div class="rr-bars">
+        <div class="rr-bar-row">
+          <span id="rr-bar-header-label">— header rules</span>
+          <div class="rr-bar-track"><div id="rr-bar-header" class="rr-bar-fill"></div></div>
+        </div>
+        <div class="rr-bar-row">
+          <span id="rr-bar-body-label">— body &amp; formatting rules</span>
+          <div class="rr-bar-track"><div id="rr-bar-body" class="rr-bar-fill"></div></div>
+        </div>
+        <div class="rr-bar-row">
+          <span id="rr-bar-jd-label">— JD skill match</span>
+          <div class="rr-bar-track"><div id="rr-bar-jd" class="rr-bar-fill"></div></div>
+        </div>
+      </div>
+
+      <h3 class="rr-section-title">Failed rules — fix these</h3>
+      <div id="rr-failed-list"></div>
+
+      <div id="rr-jd-wrap" hidden>
+        <h3 class="rr-section-title">Missing from the job description</h3>
+        <div id="rr-jd-missing"></div>
+      </div>
+
+      <div id="rr-manual-wrap" hidden>
+        <h3 class="rr-section-title">Worth a human look</h3>
+        <div id="rr-manual-list"></div>
+      </div>
+
+      <div class="rr-actions">
+        <button id="rr-again" class="rr-btn rr-btn-light" type="button">← Review another resume</button>
+      </div>
+    </div>
+
+    <div class="rr-foot">
+      <p>Resume Reviewer AI · Agentic AI Workshop demo 09 · Built by <a href="https://datawithpreet.github.io/">Preet Mehta</a>.
+      Rule-based feedback, not legal or hiring advice. Your resume never leaves your browser.</p>
+    </div>
+  </div>
+
+  <script>
+    if (typeof pdfjsLib !== "undefined") {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+  </script>
+  <script src="assets/js/resume-reviewer.js"></script>
+</body>
+</html>

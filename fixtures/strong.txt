@@ -1,0 +1,43 @@
+Priya Sharma
+Boston, MA | priya.sharma@gmail.com | (617) 555-0143
+linkedin.com/in/priyasharma | github.com/priyasharma
+
+SUMMARY
+Data Engineer with 6 years of experience building batch and streaming
+pipelines on AWS. Led migration of a legacy ETL platform to Airflow and
+Spark, cutting pipeline failures by 70%.
+
+EXPERIENCE
+Senior Data Engineer — Northwind Analytics, Boston, MA
+Jan 2022 – Present
+• Built a real-time clickstream pipeline with Kafka and Spark Structured
+  Streaming processing 40M events/day.
+• Led a team of 4 engineers migrating 120 Airflow DAGs from on-premise
+  Hadoop to AWS, reducing infra cost by $180K/year.
+• Designed a dbt + Snowflake medallion architecture serving 200+ analysts;
+  p95 query latency dropped 55%.
+• Automated data quality checks with Great Expectations, cutting
+  pipeline incidents from 12 to 3 per quarter.
+
+Data Engineer — Beacon Health, Cambridge, MA
+Jun 2019 – Dec 2021
+• Developed Python ETL jobs moving claims data into Redshift; load time
+  fell from 6 hours to 45 minutes.
+• Created Tableau dashboards tracking $25M in annual revenue cycle metrics.
+• Partnered with analysts to model HIPAA-compliant datasets, passing all
+  3 external audits with zero findings.
+
+SKILLS
+Python, SQL, Spark, Airflow, Kafka, AWS, dbt, Snowflake, Docker,
+Terraform, Kubernetes, Tableau, Looker, Git, CI/CD, Scala, Flink,
+PostgreSQL, Redis, Lambda, S3, EMR, MLOps, GraphQL
+
+PROJECTS
+• Churn-prediction ML platform — engineered 40 features in PostgreSQL
+  and S3; trained with Spark MLlib; scoring Lambda cut inference cost 35%.
+• Data governance rollout — led Agile squad; modeled 30 data marts in the
+  Snowflake data warehouse with dbt ELT; KPI dashboards in Looker used by
+  5 stakeholder teams. Strong communicator across engineering and business.
+
+EDUCATION
+B.S. Computer Science — Northeastern University, Boston, MA, 2019

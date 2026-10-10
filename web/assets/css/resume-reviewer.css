@@ -1,0 +1,169 @@
+/* ============================================================
+   Resume Reviewer AI — Demo 9 of 9
+   Black & white editorial, matching datawithpreet.github.io
+   ============================================================ */
+:root {
+  --paper: #faf8f2;
+  --paper-2: #f3efe4;
+  --ink: #141414;
+  --ink-soft: #2b2b2b;
+  --gray: #6f6a5e;
+  --line: #e3ddd0;
+  --line-strong: #141414;
+  --card: #ffffff;
+  --radius: 18px;
+  --font-display: "Space Grotesk", "DM Sans", system-ui, sans-serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font-body);
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--ink); color: var(--paper); }
+.serif { font-family: var(--font-serif); font-style: italic; }
+
+.rr-wrap { max-width: 880px; margin: 0 auto; padding: 48px 24px 90px; }
+
+/* ---------- header ---------- */
+.rr-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 34px; }
+.rr-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+.rr-brand-mark {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--ink); color: var(--paper);
+  display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 13px;
+}
+.rr-brand-copy { display: flex; flex-direction: column; line-height: 1.15; }
+.rr-brand-copy strong { font-family: var(--font-display); font-size: 13px; letter-spacing: 0.06em; }
+.rr-brand-copy small { font-size: 9px; letter-spacing: 0.22em; color: var(--gray); }
+.rr-home-link { font-size: 13px; font-weight: 600; color: var(--ink-soft); text-decoration: none; border-bottom: 1px solid transparent; }
+.rr-home-link:hover { color: var(--ink); border-color: var(--ink); }
+
+.rr-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.3em; color: var(--gray); margin-bottom: 14px; }
+.rr-title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(34px, 5vw, 56px); letter-spacing: -0.03em; line-height: 1.05;
+  margin-bottom: 14px;
+}
+.rr-sub { color: var(--gray); font-size: 16px; max-width: 62ch; margin-bottom: 8px; }
+.rr-privacy {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--paper-2); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 14px 18px; margin: 22px 0 30px;
+  font-size: 14px; color: var(--ink-soft);
+}
+.rr-privacy strong { color: var(--ink); }
+
+/* ---------- form ---------- */
+.rr-card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 30px; margin-bottom: 26px;
+}
+.rr-field { margin-bottom: 20px; }
+.rr-field label { display: block; font-family: var(--font-display); font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+.rr-field label small { font-weight: 400; color: var(--gray); }
+.rr-field input[type="text"], .rr-field textarea {
+  width: 100%; border: 1px solid var(--line-strong); border-radius: 12px;
+  padding: 12px 16px; font-size: 15px; font-family: var(--font-body);
+  background: var(--paper); color: var(--ink); outline: none;
+}
+.rr-field input:focus, .rr-field textarea:focus { box-shadow: 0 0 0 2px var(--ink); }
+.rr-field textarea { min-height: 130px; resize: vertical; }
+.rr-hint { font-size: 12.5px; color: var(--gray); margin-top: 6px; }
+
+.rr-drop {
+  border: 2px dashed var(--line-strong); border-radius: var(--radius);
+  padding: 34px 20px; text-align: center; cursor: pointer;
+  transition: background 0.25s var(--ease);
+  background: var(--paper);
+}
+.rr-drop:hover { background: var(--paper-2); }
+.rr-drop input { display: none; }
+.rr-drop-icon { font-size: 30px; display: block; margin-bottom: 10px; }
+.rr-drop strong { font-family: var(--font-display); }
+.rr-drop p { font-size: 13px; color: var(--gray); margin-top: 6px; }
+
+.rr-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-display); font-weight: 600; font-size: 16px;
+  padding: 15px 34px; border-radius: 999px; cursor: pointer;
+  background: var(--ink); color: var(--paper); border: 1px solid var(--ink);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s;
+}
+.rr-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(20,20,20,0.22); }
+.rr-btn:disabled { opacity: 0.55; cursor: wait; }
+.rr-btn-light { background: transparent; color: var(--ink); }
+.rr-btn-light:hover { background: var(--ink); color: var(--paper); }
+
+#rr-status {
+  margin-top: 18px; padding: 12px 18px; border-radius: 12px;
+  background: var(--paper-2); border: 1px solid var(--line);
+  font-size: 14px; font-weight: 500;
+}
+#rr-status.rr-error { background: #141414; color: #faf8f2; border-color: #141414; }
+
+/* ---------- results ---------- */
+.rr-score-row { display: flex; gap: 28px; align-items: center; margin-bottom: 26px; flex-wrap: wrap; }
+.rr-score-ring { position: relative; width: 150px; height: 150px; flex: 0 0 auto; }
+.rr-score-ring svg { transform: rotate(-90deg); }
+.rr-score-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+#rr-score-num { font-family: var(--font-display); font-weight: 700; font-size: 44px; letter-spacing: -0.03em; line-height: 1; }
+#rr-grade { font-family: var(--font-serif); font-style: italic; font-size: 17px; color: var(--gray); }
+.rr-score-legend h3 { font-family: var(--font-display); font-size: 20px; margin-bottom: 6px; }
+.rr-score-legend p { font-size: 14px; color: var(--gray); max-width: 40ch; }
+
+.rr-bars { margin-bottom: 8px; }
+.rr-bar-row { margin-bottom: 14px; }
+.rr-bar-row span { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; }
+.rr-bar-track { height: 10px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.rr-bar-fill { height: 100%; background: var(--ink); border-radius: 999px; width: 0; transition: width 0.9s var(--ease); }
+
+.rr-section-title {
+  font-family: var(--font-display); font-size: 19px; font-weight: 700;
+  margin: 30px 0 14px; padding-top: 24px; border-top: 1px solid var(--line);
+  letter-spacing: -0.01em;
+}
+.rr-rule {
+  border: 1px solid var(--line); border-radius: 14px;
+  padding: 16px 18px; margin-bottom: 12px; background: var(--paper);
+}
+.rr-rule-fail { border-left: 5px solid var(--ink); }
+.rr-rule-manual { border-left: 5px solid var(--gray); }
+.rr-rule-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 6px; }
+.rr-rule-id {
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  background: var(--ink); color: var(--paper); border-radius: 6px; padding: 2px 8px;
+}
+.rr-rule-manual .rr-rule-id { background: var(--gray); }
+.rr-rule-name { font-weight: 600; font-size: 15px; }
+.rr-rule-detail { font-size: 14px; color: var(--ink-soft); margin-bottom: 6px; }
+.rr-rule-fix { font-size: 14px; }
+.rr-rule-fix strong { font-family: var(--font-display); }
+.rr-none { color: var(--gray); font-size: 15px; }
+
+.rr-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.rr-chip {
+  font-size: 13px; font-weight: 600; border: 1px solid var(--ink);
+  border-radius: 999px; padding: 5px 14px;
+}
+.rr-chip-miss { background: var(--ink); color: var(--paper); }
+.rr-jd-note { font-size: 14px; color: var(--ink-soft); margin-bottom: 6px; }
+
+.rr-actions { margin-top: 30px; display: flex; gap: 12px; flex-wrap: wrap; }
+.rr-foot { margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--gray); }
+.rr-foot a { color: inherit; }
+
+@media (max-width: 560px) {
+  .rr-card { padding: 20px; }
+  .rr-score-row { gap: 18px; }
+  .rr-wrap { padding: 30px 16px 70px; }
+}

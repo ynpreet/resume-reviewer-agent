@@ -1,0 +1,23 @@
+Data Engineer — Growth Analytics Team
+
+We are hiring a Data Engineer to build the data platform powering our
+growth analytics. You will own batch and streaming pipelines end to end.
+
+What you'll do:
+- Build and maintain ETL/ELT pipelines in Python and SQL
+- Develop Spark jobs for large-scale batch processing
+- Orchestrate workflows with Airflow on AWS
+- Model data in Snowflake using dbt
+- Build real-time features with Kafka and Flink
+- Partner with data scientists on machine learning feature engineering
+- Uphold data governance and data quality standards (Great Expectations)
+- Ship dashboards in Tableau; track KPIs and run A/B tests
+
+What you'll bring:
+- 4+ years of experience with Python, SQL, Spark, and Airflow
+- Strong data modeling fundamentals (data warehouse, medallion architecture)
+- Production AWS experience: S3, EMR, Lambda, Redshift
+- Familiarity with Docker, Kubernetes, Terraform, and CI/CD
+- Experience with PostgreSQL and Redis
+- Excellent communication and stakeholder management; Agile team player
+- Bonus: Scala, GraphQL, Looker, MLOps experience
