@@ -34,6 +34,13 @@ def _print_report(rep, name):
     print("=" * 64)
     print("RESUME REVIEWER AI -- report for %s" % name)
     print("=" * 64)
+    b20 = next((r for r in rep["failed"] if r["id"] == "B20"), None)
+    if b20:
+        print("!! WARNING: the extracted text looks garbled (bad scan or "
+              "broken export).")
+        print("!! Scores and rule results below are UNRELIABLE — re-export "
+              "with selectable text.")
+        print()
     print("Overall score : %d/100  [%s]  (%s)"
           % (rep["overall"], bar(rep["overall"]), rep["grade"]))
     print("Rules score   : %d/100  (%d passed, %d failed, %d manual checks)"
@@ -58,6 +65,16 @@ def _print_report(rep, name):
 
     if rep["jd"]:
         jd = rep["jd"]
+        if jd.get("unsubstantiated"):
+            print("--- SKILLS WITHOUT EVIDENCE IN EXPERIENCE (%d) ---"
+                  % len(jd["unsubstantiated"]))
+            print("These appear only in keyword lists (summary/skills), never "
+                  "in your experience bullets:")
+            for s in jd["unsubstantiated"]:
+                print("  - %s" % s)
+            print("  Fix: back each skill with a bullet showing how you used "
+                  "it; keyword stuffing does not raise your score.")
+            print()
         if jd["missing"]:
             print("--- MISSING JD SKILLS (%d) ---" % len(jd["missing"]))
             print("The job description asks for these; your resume doesn't "
