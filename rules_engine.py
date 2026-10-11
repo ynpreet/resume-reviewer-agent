@@ -86,6 +86,26 @@ ACTION_VERBS = {
     "tripled", "slashed", "decreased", "grew", "expanded", "launched",
     "crafted", "wrote", "managed", "directed", "headed", "oversaw",
 }
+# A percentage of 100%+ (or a 5x+ multiple) is an extraordinary claim that
+# needs a baseline, period, and scope — otherwise it reads as invented.
+BIG_PCT_RE = re.compile(r"\b\d{3,}%")
+BIG_MULT_RE = re.compile(r"\b(?:[5-9]\d|\d{3,})x\b")
+# Company-wide outcomes a single candidate can't plausibly attribute.
+COMPANY_OUTCOME_RE = re.compile(
+    r"\b(company|firm|business|organization)['\u2019s]*\s+"
+    r"(revenue|profit|sales|growth|valuation|market\s+share)\b", re.IGNORECASE)
+
+
+def _big_claims(bullets):
+    hits = []
+    for b in bullets:
+        t = re.sub(r"^[•\-\*▪‣–>]+\s*", "", b).strip()
+        if BIG_PCT_RE.search(t) or BIG_MULT_RE.search(t) or \
+                COMPANY_OUTCOME_RE.search(t):
+            hits.append(t[:80])
+    return hits
+
+
 # Present-tense verb forms (base + 3rd-person) that should not open bullets
 # in *past* jobs. Past-tense (-ed) and -ing forms are intentionally absent.
 PRESENT_TENSE_FORMS = {
@@ -472,6 +492,13 @@ def h14_header_compact(doc):
     if signals >= 3 and n <= 8:
         return _rule("H14", "Header", "Compact header", "pass",
                      "Contact block fits in %d lines." % n)
+    if n <= 8:
+        return _rule("H14", "Header", "Compact header", "fail",
+                     "Header is only %d lines but carries no contact info — "
+                     "no email, phone, LinkedIn, or location to compact."
+                     % n,
+                     "Add email, phone, linkedin.com/in/yourname and "
+                     "'City, ST' on one or two lines under your name.")
     return _rule("H14", "Header", "Compact header", "fail",
                  "Header sprawls over %d lines." % n,
                  "Compress name + contact info into at most 8 lines — "
@@ -580,6 +607,17 @@ def b4_quantified(doc):
     if not bullets:
         return _rule("B4", "Body & Formatting", "Quantified achievements",
                      "manual", "No bullet lines detected.")
+    big = _big_claims(bullets)
+    if big:
+        return _rule("B4", "Body & Formatting", "Quantified achievements",
+                     "fail",
+                     "Unsubstantiated claim, e.g. '%s' — no baseline, time "
+                     "period, or scope." % big[0],
+                     "Big numbers need proof: add the baseline, period, "
+                     "scope, and your specific contribution (e.g. 'Grew the "
+                     "payments line from $2M to $4M ARR in 12 months by "
+                     "rebuilding the checkout pipeline'). Never claim "
+                     "company-wide outcomes you can't attribute.")
     q = sum(1 for b in bullets if re.search(r"\d|%|\$", b))
     pct = 100 * q / len(bullets)
     if pct >= 40:
@@ -833,8 +871,60 @@ ALL_RULES = HEADER_RULES + BODY_RULES
 
 
 # ---------------------------------------------------------------------------
-# JD keyword matching
+# B19 -- keyword-stuffing check (needs JD context; appended in review())
 # ---------------------------------------------------------------------------
+
+def b19_skills_backed_by_evidence(jd_info):
+    """Fail when matched JD skills are mostly keyword-list-only.
+
+    Takes the jd_match() dict (None when no JD was supplied). Needs JD
+    context, so it is appended in review() rather than run in ALL_RULES.
+    """
+    if not jd_info or not jd_info.get("matched"):
+        return None
+    matched = jd_info["matched"]
+    backed = len(jd_info.get("substantiated", []))
+    ratio = backed / len(matched)
+    if len(matched) >= 5 and ratio < 0.25:
+        return _rule("B19", "Body & Formatting", "Skills backed by evidence",
+                     "fail",
+                     "Only %d of %d matched skills (%d%%) appear in your "
+                     "experience bullets; the rest exist only in keyword "
+                     "lists." % (backed, len(matched), round(100 * ratio)),
+                     "Back each skill with a bullet showing how you used it "
+                     "(project, scale, result). Keyword stuffing does not "
+                     "fool hiring managers — or ATS keyword filters.")
+    return None
+
+
+# ---------------------------------------------------------------------------
+# B20 -- garbled-text detection (appended in review() when triggered)
+# ---------------------------------------------------------------------------
+
+def _garble_ratio(doc):
+    """Fraction of single-letter tokens — high in scanned/OCR-broken text."""
+    words = re.findall(r"[A-Za-z]+", doc["text"])
+    single = [w for w in words
+              if len(w) == 1 and w.lower() not in ("a", "i")]
+    return (len(single) / len(words)) if words else 0.0, len(single)
+
+
+def b20_text_quality(doc):
+    """Fail when the extracted text looks garbled (bad OCR / broken export).
+
+    Rules that "pass" on garbled text are meaningless, so this fails loudly
+    instead of letting the resume score on garbage.
+    """
+    ratio, n = _garble_ratio(doc)
+    if n >= 10 and ratio >= 0.15:
+        return _rule("B20", "Body & Formatting", "Text extraction quality",
+                     "fail",
+                     "Text looks garbled (%d single-letter fragments, "
+                     "%.0f%% of words) — like a bad scan or broken export."
+                     % (n, 100 * ratio),
+                     "Re-export as a real PDF/DOCX with selectable text and "
+                     "re-run. Results below are unreliable until then.")
+    return None
 
 def _skill_in(text, term, aliases):
     variants = [term] + aliases
@@ -845,14 +935,30 @@ def _skill_in(text, term, aliases):
     return False
 
 
-def jd_match(resume_text, jd_text):
-    """Return {jd_skills, matched, missing, coverage, top_missing_keywords}."""
+def jd_match(resume_text, jd_text, exp_text=""):
+    """Return {jd_skills, matched, missing, coverage, top_missing_keywords}.
+
+    A matched skill is also tagged *substantiated* when it appears in the
+    experience section. Skills showing up solely in keyword lists
+    (summary/skills sections) land in "unsubstantiated": they are listed
+    in the report and trigger rule B19 when the ratio is extreme, but
+    coverage scoring is unchanged so legitimate skills-section listings
+    are not punished.
+    """
     rl, jl = resume_text.lower(), jd_text.lower()
+    el = (exp_text or "").lower()
     jd_skills = [canon for canon, aliases in SKILLS
                  if _skill_in(jl, canon, aliases)]
+    aliases_of = dict(SKILLS)
     matched = [s for s in jd_skills
-               if _skill_in(rl, s, dict(SKILLS)[s])]
+               if _skill_in(rl, s, aliases_of[s])]
+    substantiated = [s for s in matched
+                     if _skill_in(el, s, aliases_of[s])]
+    unsubstantiated = [s for s in matched if s not in substantiated]
     missing = [s for s in jd_skills if s not in matched]
+    # Coverage counts every matched skill (same as before); unsubstantiated
+    # skills are listed separately and penalized via rule B19 instead, so
+    # legitimate skills-section listings are not punished.
     coverage = (100.0 * len(matched) / len(jd_skills)) if jd_skills else None
 
     freq = {}
@@ -862,7 +968,9 @@ def jd_match(resume_text, jd_text):
     top = sorted(freq, key=lambda w: (-freq[w], w))[:25]
     missing_kw = [w for w in top if w not in rl][:10]
     return {"jd_skills": jd_skills, "matched": matched, "missing": missing,
-            "coverage": coverage, "missing_keywords": missing_kw}
+            "coverage": coverage, "missing_keywords": missing_kw,
+            "substantiated": substantiated,
+            "unsubstantiated": unsubstantiated}
 
 
 # ---------------------------------------------------------------------------
@@ -871,10 +979,19 @@ def jd_match(resume_text, jd_text):
 
 def review(doc, jd_text=""):
     results = [fn(doc) for fn in ALL_RULES]
+    jd = (jd_match(doc["text"], jd_text,
+                   "\n".join(_section_lines(doc, EXP_HEAD)))
+          if jd_text.strip() else None)
+    # B19 needs the JD context computed above.
+    b19 = b19_skills_backed_by_evidence(jd)
+    if b19:
+        results.append(b19)
+    b20 = b20_text_quality(doc)
+    if b20:
+        results.append(b20)
     scored = [r for r in results if r["status"] in ("pass", "fail")]
     passed = sum(1 for r in scored if r["status"] == "pass")
     rule_score = round(100 * passed / len(scored)) if scored else 0
-    jd = jd_match(doc["text"], jd_text) if jd_text.strip() else None
     if jd and jd["coverage"] is not None:
         overall = round(0.7 * rule_score + 0.3 * jd["coverage"])
     else:
