@@ -436,24 +436,75 @@ function skillIn(text, term, aliases) {
   }
   return false;
 }
-function jdMatch(resumeText, jdText) {
+function jdMatch(resumeText, jdText, expText) {
   const rl = resumeText.toLowerCase(), jl = jdText.toLowerCase();
+  const el = (expText || "").toLowerCase();
   const jdSkills = SKILLS.filter(([c, a]) => skillIn(jl, c, a)).map(([c]) => c);
   const matched = jdSkills.filter(s => skillIn(rl, s, SKILL_ALIASES[s] || []));
+  // A matched skill is also tagged *substantiated* when it appears in the
+  // experience section. Skills showing up solely in keyword lists
+  // (summary/skills sections) land in "unsubstantiated": they are listed
+  // in the report and trigger rule B19 when the ratio is extreme, but
+  // coverage scoring is unchanged so legitimate skills-section listings
+  // are not punished. Mirrors Python rules_engine.jd_match.
+  const substantiated = matched.filter(s => skillIn(el, s, SKILL_ALIASES[s] || []));
+  const unsubstantiated = matched.filter(s => !substantiated.includes(s));
   const missing = jdSkills.filter(s => !matched.includes(s));
   const coverage = jdSkills.length ? 100 * matched.length / jdSkills.length : null;
   const freq = {};
   (jl.match(/[a-z][a-z\-]{3,}/g) || []).forEach(w => { if (!STOPWORDS.has(w)) freq[w] = (freq[w] || 0) + 1; });
   const top = Object.keys(freq).sort((a, b) => freq[b] - freq[a] || (a < b ? -1 : 1)).slice(0, 25);
   const missingKw = top.filter(w => !rl.includes(w)).slice(0, 10);
-  return { jd_skills: jdSkills, matched, missing, coverage, missing_keywords: missingKw };
+  return { jd_skills: jdSkills, matched, missing, coverage, missing_keywords: missingKw,
+    substantiated, unsubstantiated };
+}
+/* B19 -- keyword-stuffing check (needs JD context; appended in review()).
+   Mirrors Python rules_engine.b19_skills_backed_by_evidence. */
+function b19(jd) {
+  if (!jd || !jd.matched || !jd.matched.length) return null;
+  const backed = (jd.substantiated || []).length;
+  const ratio = backed / jd.matched.length;
+  if (jd.matched.length >= 5 && ratio < 0.25) {
+    return rule("B19", "Body & Formatting", "Skills backed by evidence", "fail",
+      "Only " + backed + " of " + jd.matched.length + " matched skills (" + Math.round(100 * ratio) +
+      "%) appear in your experience bullets; the rest exist only in keyword lists.",
+      "Back each skill with a bullet showing how you used it (project, scale, result). " +
+      "Keyword stuffing does not fool hiring managers \u2014 or ATS keyword filters.");
+  }
+  return null;
+}
+/* B20 -- garbled-text detection (appended in review() when triggered).
+   Mirrors Python rules_engine.b20_text_quality. */
+function garbleRatio(doc) {
+  const words = doc.text.match(/[A-Za-z]+/g) || [];
+  const single = words.filter(w => w.length === 1 && w.toLowerCase() !== "a" && w.toLowerCase() !== "i");
+  return { ratio: words.length ? single.length / words.length : 0, n: single.length };
+}
+function b20(doc) {
+  const g = garbleRatio(doc);
+  if (g.n >= 10 && g.ratio >= 0.15) {
+    return rule("B20", "Body & Formatting", "Text extraction quality", "fail",
+      "Text looks garbled (" + g.n + " single-letter fragments, " +
+      Math.round(100 * g.ratio) + "% of words) \u2014 like a bad scan or broken export.",
+      "Re-export as a real PDF/DOCX with selectable text and re-run. " +
+      "Results below are unreliable until then.");
+  }
+  return null;
 }
 function review(doc, jdText) {
   const results = [...HEADER_RULES, ...BODY_RULES].map(fn => fn(doc));
+  const jd = jdText && jdText.trim()
+    ? jdMatch(doc.text, jdText, sectionLines(doc, EXP_HEAD_RE).join("\n"))
+    : null;
+  // B19 needs the JD context computed above; B20 needs the doc text.
+  // Both are appended before scoring, mirroring Python review().
+  const b19r = b19(jd);
+  if (b19r) results.push(b19r);
+  const b20r = b20(doc);
+  if (b20r) results.push(b20r);
   const scored = results.filter(r => r.status === "pass" || r.status === "fail");
   const passed = scored.filter(r => r.status === "pass").length;
   const ruleScore = scored.length ? Math.round(100 * passed / scored.length) : 0;
-  const jd = jdText && jdText.trim() ? jdMatch(doc.text, jdText) : null;
   const overall = (jd && jd.coverage !== null) ? Math.round(0.7 * ruleScore + 0.3 * jd.coverage) : ruleScore;
   const grade = overall >= 90 ? "Excellent" : overall >= 75 ? "Strong" : overall >= 60 ? "Fair" : "Needs work";
   return { rules: results, failed: results.filter(r => r.status === "fail"),
@@ -624,6 +675,23 @@ function renderResults(rep) {
       p.innerHTML = "<strong>Frequent JD keywords missing from your resume:</strong> " +
         rep.jd.missing_keywords.map(escapeHtml).join(", ");
       jdMiss.appendChild(p);
+    }
+    if (rep.jd.unsubstantiated && rep.jd.unsubstantiated.length) {
+      const p = document.createElement("p");
+      p.className = "rr-jd-note";
+      p.innerHTML = "<strong>Skills without evidence in experience (" + rep.jd.unsubstantiated.length + "):</strong> " +
+        "these appear only in keyword lists (summary/skills), never in your experience bullets. " +
+        "Back each skill with a bullet showing how you used it; keyword stuffing does not raise your score.";
+      jdMiss.appendChild(p);
+      const chips = document.createElement("div");
+      chips.className = "rr-chips";
+      rep.jd.unsubstantiated.forEach(s => {
+        const c = document.createElement("span");
+        c.className = "rr-chip rr-chip-warn";
+        c.textContent = s;
+        chips.appendChild(c);
+      });
+      jdMiss.appendChild(chips);
     }
   }
   $("rr-results").scrollIntoView({ behavior: "smooth", block: "start" });
