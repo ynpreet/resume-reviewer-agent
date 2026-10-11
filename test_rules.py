@@ -77,6 +77,54 @@ def main():
           "weak=%d edge=%d strong=%d"
           % (weak["overall"], edge["overall"], strong["overall"]))
 
+    # ---- B19: keyword stuffing (conditional rule) ---------------------------
+    stuff_txt = (
+        "John Doe\n"
+        "john.doe@example.com | 555-0100 | linkedin.com/in/johndoe | Boston, MA\n"
+        "Summary: Python, SQL, AWS, Azure, GCP, Databricks, Spark, Kafka, ML, AI,\n"
+        "leadership, communication, healthcare, finance.\n"
+        "Experience:\n"
+        "Data Analyst, Acme Corp, 2020 - 2024\n"
+        "- Wrote reports and attended meetings.\n"
+        "- Helped the team with various tasks.\n"
+        "Education: B.S. Something, 2020\n"
+    )
+    stuff = review(doc_from_text(stuff_txt), jd)
+    sf = failed_ids(stuff)
+    check("B19: fires on keyword-stuffed resume", "B19" in sf,
+          "failed=%s" % sorted(sf))
+    b19_detail = next(r["detail"] for r in stuff["failed"] if r["id"] == "B19")
+    check("B19: detail names the evidence ratio",
+          "Only" in b19_detail and "matched skills" in b19_detail, b19_detail)
+    check("B19: unsubstantiated skills listed",
+          len(stuff["jd"]["unsubstantiated"]) >= 5,
+          "got %d" % len(stuff["jd"]["unsubstantiated"]))
+    check("B19: does not fire on strong resume",
+          "B19" not in failed_ids(strong),
+          "failed=%s" % sorted(failed_ids(strong)))
+    check("B19: no JD means no B19",
+          "B19" not in failed_ids(review(doc_from_text(stuff_txt), "")))
+
+    # ---- B20: garbled-text detection (conditional rule) ---------------------
+    garb_txt = (
+        "J ane D oe P yth on D ata E ng ineer Experien ce: 20 22 - 20 26 "
+        "B uilt a P ySp ark pip eline pro cess ing 10 mil lion re cords da ily "
+        "and re duc ed run time fr om 8 ho urs to 2 ho urs. "
+        "S kills: P yth on, S QL, A WS."
+    )
+    garb = review(doc_from_text(garb_txt), jd)
+    gf = failed_ids(garb)
+    check("B20: fires on garbled text", "B20" in gf,
+          "failed=%s" % sorted(gf))
+    b20_detail = next(r["detail"] for r in garb["failed"] if r["id"] == "B20")
+    check("B20: detail names the fragment count",
+          "single-letter fragments" in b20_detail, b20_detail)
+    check("B20: does not fire on strong resume",
+          "B20" not in failed_ids(strong),
+          "failed=%s" % sorted(failed_ids(strong)))
+    check("B20: does not fire on clean short text",
+          "B20" not in failed_ids(review(doc_from_text("Jane Doe\nData Engineer"), "")))
+
     # ---- determinism ----------------------------------------------------
     a = json.dumps(review(doc_from_text(load("strong.txt")), jd), sort_keys=True)
     b = json.dumps(review(doc_from_text(load("strong.txt")), jd), sort_keys=True)
